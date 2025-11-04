@@ -1,0 +1,38 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Django checks
+        working-directory: gestao_ferramentas
+        run: |
+          python manage.py check --deploy --fail-level WARNING || true
+          python manage.py check
+      - name: Migrations dry-run
+        working-directory: gestao_ferramentas
+        run: |
+          python manage.py makemigrations --check --dry-run
+      - name: Run a minimal smoke test
+        working-directory: gestao_ferramentas
+        run: |
+          python -c "import django, os; os.environ.setdefault('DJANGO_SETTINGS_MODULE','gestao_ferramentas.settings'); django.setup(); print('Django version:', django.get_version())"
