@@ -43,3 +43,17 @@ Observações:
 ## Notas
 - Virtualenv: `.venv` com Django e dependências instaladas.
 - Banco: SQLite (`db.sqlite3`) (ignorado pelo `.gitignore`).
+
+## Importação via linha de comando
+
+Você também pode importar um CSV diretamente pela CLI:
+
+```powershell
+Set-Location 'C:\\Users\\automacao\\my-project\\Controle_Ferramenta\\gestao_ferramentas'
+..\\.venv\\Scripts\\python.exe manage.py import_itens 'C:\\Users\\automacao\\Downloads\\Controle de Ferramentas(Cadastro Novo) (1).csv' --dry-run
+```
+
+Opções úteis:
+- `--encoding` (padrão: `utf-8-sig`)
+- `--delimiter` (auto por padrão; suporta `, ; \t |`)
+- `--dry-run` (simula sem gravar)
