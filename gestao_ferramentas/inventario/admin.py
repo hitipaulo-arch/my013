@@ -28,6 +28,58 @@ class ItemResource(resources.ModelResource):
         # Usa o campo único como identificador para atualização (se já existir)
         import_id_fields = ('codigo_m',)
 
+    # Normaliza linhas antes da importação
+    def before_import_row(self, row, row_number=None, **kwargs):
+        # Mapear variações de cabeçalho para os nomes canônicos usados acima
+        canonical = {
+            'Código M': ['Codigo M', 'CODIGO M', 'CódigoM', 'CODIGO_M', 'Cod M', 'Cod. M'],
+            'Marca': ['marca', 'MARCA'],
+            'Modelo/Descrição': ['Modelo', 'Modelo / Descrição', 'Modelo - Descrição', 'Descrição', 'Descricao'],
+            'Nº de Série/Ref.': ['No de Série/Ref.', 'N de Série/Ref.', 'Número de Série', 'Numero de Serie', 'Nº de Série', 'Nº Série', 'Nº Série/Ref'],
+            'Quantidade': ['Qtde', 'Qtd', 'QTD', 'quantidade', 'QUANTIDADE'],
+            'Patrimônio': ['Patrimonio', 'PAT'],
+            'Responsável': ['Responsavel', 'RESPONSAVEL'],
+            'Departamento': ['Depto', 'Departamento/Setor', 'Setor']
+        }
+
+        def first_present(row_map, keys):
+            for k in keys:
+                if k in row_map and row_map[k] not in (None, ''):
+                    return row_map[k]
+            return None
+
+        # Preencher valores canônicos a partir de variações, se ausentes
+        for canon_key, alt_keys in canonical.items():
+            if canon_key not in row or row[canon_key] in (None, ''):
+                val = first_present(row, [canon_key] + alt_keys)
+                if val is not None:
+                    row[canon_key] = val
+
+        # Trim espaços em strings
+        for k in list(row.keys()):
+            v = row.get(k)
+            if isinstance(v, str):
+                row[k] = v.strip()
+
+        # Quantidade: padrão 1, converter para int (aceita vírgula)
+        q = row.get('Quantidade')
+        if q in (None, ''):
+            row['Quantidade'] = 1
+        else:
+            if isinstance(q, str):
+                q_clean = q.replace('\u00A0', ' ').replace(',', '.').strip()
+            else:
+                q_clean = q
+            try:
+                row['Quantidade'] = int(float(q_clean))
+            except Exception:
+                row['Quantidade'] = 1
+
+        # Campos opcionais vazios -> None
+        for optional_key in ['Nº de Série/Ref.', 'Patrimônio', 'Responsável', 'Departamento']:
+            if row.get(optional_key) in ('', 'NULL', 'null'):
+                row[optional_key] = None
+
 # 2. Crie uma classe "Admin" que usa a biblioteca
 # Nós não usamos mais "admin.site.register(Item)"
 @admin.register(Item)
