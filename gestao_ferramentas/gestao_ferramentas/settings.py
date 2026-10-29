@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,30 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(_ku&sp7^#ql)t9(jvlu1l7l)hn+lr#j$33d3&t!!=)-k5a)17'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-development-only-key-change-me')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+# Keep local development convenient; set DEBUG=False and a real secret in production.
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in {'1', 'true', 'yes'}
+_default_hosts = '*' if DEBUG else 'localhost,127.0.0.1,[::1]'
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', _default_hosts).split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get(
+        'DJANGO_CSRF_TRUSTED_ORIGINS',
+        'https://*.e2b.app,http://localhost:8000,http://127.0.0.1:8000',
+    ).split(',')
+    if origin.strip()
+]
+# The Arena preview is embedded cross-site over HTTPS and terminates TLS at its proxy.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+COOKIE_SECURE = os.environ.get('DJANGO_COOKIE_SECURE', 'False').lower() in {'1', 'true', 'yes'}
+# SameSite=None is needed by HTTPS embedded previews and requires Secure cookies.
+CSRF_COOKIE_SAMESITE = 'None' if COOKIE_SECURE else 'Lax'
+SESSION_COOKIE_SAMESITE = 'None' if COOKIE_SECURE else 'Lax'
+CSRF_COOKIE_DOMAIN = os.environ.get('DJANGO_COOKIE_DOMAIN') or None
+SESSION_COOKIE_DOMAIN = os.environ.get('DJANGO_COOKIE_DOMAIN') or None
+CSRF_COOKIE_SECURE = COOKIE_SECURE
+SESSION_COOKIE_SECURE = COOKIE_SECURE
 
 
 # Application definition
@@ -105,9 +124,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'pt-br'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Sao_Paulo'
 
 USE_I18N = True
 
