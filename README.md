@@ -1,59 +1,59 @@
-# gestao_ferramentas
+# Gestão de ferramentas
 
-Django project scaffold created with `django-admin startproject`.
+Aplicação Django para manter o inventário de ferramentas, com gestão pelo Admin e importação CSV.
 
-Quick start (PowerShell):
+## Início rápido
 
-```powershell
-Set-Location 'C:\Users\automacao\my-project\Controle_Ferramenta'
-.\.venv\Scripts\Activate.ps1
-python -m django --version
+Com Python 3.10 ou superior instalado, execute na pasta principal do projeto:
+
+```bash
+python iniciar_servidor.py
+```
+
+O script cria `.venv` se necessário, instala/verifica as dependências, aplica as migrações e inicia o servidor em http://127.0.0.1:8000/. Encerre com `Ctrl+C`. Para criar o usuário administrador na primeira execução, abra outro terminal e execute `python gestao_ferramentas/manage.py createsuperuser` (com o ambiente virtual ativado).
+
+## Requisitos e execução manual
+
+- Python 3.10 ou superior
+- Dependências em `requirements.txt`
+
+```bash
+python -m venv .venv
+# Linux/macOS
+source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cd gestao_ferramentas
+python manage.py migrate
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Notes:
-# gestao_ferramentas
+Acesse http://127.0.0.1:8000/admin/ e autentique-se. A aplicação usa SQLite por padrão, criando `db.sqlite3` localmente.
 
-[![Django CI](https://github.com/hitipaulo-arch/my013/actions/workflows/django-ci.yml/badge.svg)](https://github.com/hitipaulo-arch/my013/actions/workflows/django-ci.yml)
+## Importar CSV pela linha de comando
 
-Projeto Django para gestão de ferramentas.
-
-## Como rodar (PowerShell)
-
-```powershell
-Set-Location 'C:\\Users\\automacao\\my-project\\Controle_Ferramenta'
-.\\.venv\\Scripts\\Activate.ps1
-python -m django --version
-Set-Location .\\gestao_ferramentas
-python manage.py runserver
+```bash
+python manage.py import_itens caminho/itens.csv --dry-run
+python manage.py import_itens caminho/itens.csv
 ```
 
-## Importação pelo Admin (django-import-export)
+O cabeçalho deve conter `Código M`; os demais nomes aceitam variantes documentadas no comando. Colunas reconhecidas: `Marca`, `Modelo/Descrição`, `Nº de Série/Ref.`, `Quantidade`, `Patrimônio`, `Responsável` e `Departamento`. O delimitador é detectado automaticamente (`;`, `,`, tabulação ou `|`); use `--delimiter` para defini-lo explicitamente. A codificação padrão é `utf-8-sig`; altere com `--encoding` se necessário.
 
-1. Acesse http://127.0.0.1:8000/admin/ e entre com seu usuário admin.
-2. Vá em "Itens do Inventário" → "Import".
-3. Selecione o arquivo CSV (UTF-8). Cabeçalhos esperados:
-	- Código M, Marca, Modelo/Descrição, Nº de Série/Ref., Quantidade, Patrimônio, Responsável, Departamento
-4. Faça um "Dry run" e, se estiver ok, confirme a importação.
+`--dry-run` valida os dados e mostra os totais sem gravar qualquer inclusão ou atualização. Códigos existentes são atualizados. Quantidade deve ser um inteiro positivo; linhas sem `Código M` são ignoradas.
 
-Observações:
-- Campo identificador único: "Código M" (atualiza se já existir).
-- Suporte a XLSX via `openpyxl` já instalado.
+Também é possível importar/exportar pelo Admin, em **Itens do inventário** → **Import/Export**. Faça primeiro uma simulação (dry run) e revise o resultado.
 
-## Notas
-- Virtualenv: `.venv` com Django e dependências instaladas.
-- Banco: SQLite (`db.sqlite3`) (ignorado pelo `.gitignore`).
+## Configuração para produção
 
-## Importação via linha de comando
+Defina as variáveis de ambiente `DJANGO_SECRET_KEY` (chave secreta forte), `DJANGO_DEBUG=False` e `DJANGO_ALLOWED_HOSTS` (hosts separados por vírgula). A configuração padrão serve apenas para desenvolvimento local; não publique a chave de desenvolvimento.
 
-Você também pode importar um CSV diretamente pela CLI:
+## Testes e verificações
 
-```powershell
-Set-Location 'C:\\Users\\automacao\\my-project\\Controle_Ferramenta\\gestao_ferramentas'
-..\\.venv\\Scripts\\python.exe manage.py import_itens 'C:\\Users\\automacao\\Downloads\\Controle de Ferramentas(Cadastro Novo) (1).csv' --dry-run
+Na pasta `gestao_ferramentas`:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
 ```
-
-Opções úteis:
-- `--encoding` (padrão: `utf-8-sig`)
-- `--delimiter` (auto por padrão; suporta `, ; \t |`)
-- `--dry-run` (simula sem gravar)
